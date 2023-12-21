@@ -1,2 +1,2 @@
-# dotaMint
- 波卡 dota 批量mint开源脚本
+# INJS_Mint
+ injs 批量mint 开源脚本
