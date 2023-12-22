@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { getQueryClient } from "@sei-js/core";
 // import { HdPath, stringToPath } from "@cosmjs/crypto";
 import { getNetworkInfo, Network } from "@injectivelabs/networks";
@@ -17,15 +17,14 @@ const network = new HttpProvider(polkadotlWSS);
 
 function getNowTime() {
   var d = new Date(),
-      str = '[';
-  str += d.getHours() + ':';
-  str += d.getMinutes() + ':';
-  str += d.getSeconds() + ':';
+    str = "[";
+  str += d.getHours() + ":";
+  str += d.getMinutes() + ":";
+  str += d.getSeconds() + ":";
   str += d.getMilliseconds();
   str += "] ";
   return str;
 }
-
 
 const Minter: React.FC = () => {
   const [mnemonic, setMnemonic] = useState<string>("");
@@ -34,6 +33,7 @@ const Minter: React.FC = () => {
   isEndRef.current = isEnd;
   const [logs, setLogs] = useState<string[]>([]);
   const [count, setCount] = useState<number>(0);
+  const [dotatime, setDotatime] = useState<number>(10000);
 
   const mintFn = useCallback(
     async (polkadotApi: any, joeyAddress: any, joey: any) => {
@@ -46,6 +46,7 @@ const Minter: React.FC = () => {
           .batchAll([tx1, tx2])
           .signAndSend(joey);
         console.log(tx3, "hash:", tx3.hash.toHex());
+        console.log(getNowTime(),"发送交易");
         if (tx3.hash.toHex().length !== 0) {
           setCount((prev) => prev + 1);
           setLogs((pre) => [...pre, `${getNowTime()} ：铸造完成`]);
@@ -71,15 +72,15 @@ const Minter: React.FC = () => {
       setLogs((pre) => [...pre, `成功导入钱包: ${joeyAddress}`]);
 
       while (true) {
-      if (isEndRef.current) {
-        setLogs((pre) => [...pre, `暂停铸造`]);
-        break;
-      }
-      await mintFn(polkadotApi, joeyAddress, joey);
-      await new Promise((resolve) => setTimeout(resolve, 7000));
+        if (isEndRef.current) {
+          setLogs((pre) => [...pre, `暂停铸造`]);
+          break;
+        }
+        await mintFn(polkadotApi, joeyAddress, joey);
+        await new Promise((resolve) => setTimeout(resolve, dotatime));
       }
     },
-    [mintFn]
+    [mintFn, dotatime]
   );
 
   const handleMint = async () => {
@@ -102,9 +103,18 @@ const Minter: React.FC = () => {
     isEndRef.current = true;
   };
 
+  //修改时间暂停所有铸造操作
+  useEffect(() => {
+    handleEnd();
+    console.log("修改时间暂停所有铸造操作");
+  }, [dotatime]);
+
   return (
     <div className="flex flex-col items-center">
-      <h1>dota疯狂铸造脚本 7秒铸造一次（最适合的时间） 交易详细看 https://polkadot.subscan.io/</h1>
+      <h1>
+        dota疯狂铸造脚本 7秒铸造一次（最适合的时间） 交易详细看
+        https://polkadot.subscan.io/
+      </h1>
       <p className="text-xs mt-2 text-gray-400">打到账户没钱为止</p>
       <div>
         <textarea
@@ -112,6 +122,15 @@ const Minter: React.FC = () => {
           placeholder="请输入助记词，比如：jazz bench loan chronic ready pelican travel charge lunar pear detect couch。当有多的账号的时候，用,分割，比如:jazz bench loan chronic ready pelican travel charge lunar pear detect couch,black clay figure average spoil insane hire typical surge still brown object"
           value={mnemonic}
           onChange={(e) => setMnemonic(e.target.value)}
+        />
+      </div>
+      <div className="flex flex-col items-center">
+        <h1>设置发送间隔时长 1000 = 1秒</h1>
+        <input
+          className="mt-6 border border-black rounded-xl w-[400px] px-4 py-6 resize-none h-[40px]"
+          placeholder="请输入发送间隔时长，单位毫秒"
+          value={dotatime}
+          onChange={(e) => setDotatime(Number(e.target.value))}
         />
       </div>
       <div className="flex w-[400px] justify-center space-x-6 mt-4">
